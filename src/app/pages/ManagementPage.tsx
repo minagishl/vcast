@@ -33,7 +33,9 @@ type WsMessage = { type: "state"; data: AppState };
 export default function ManagementPage() {
   const [state, setState] = useState<AppState | null>(null);
   const [connected, setConnected] = useState(false);
+  const [textInput, setTextInput] = useState("");
   const wsRef = useRef<WebSocket | null>(null);
+  const textTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchState();
@@ -43,8 +45,17 @@ export default function ManagementPage() {
       if (wsRef.current) {
         wsRef.current.close();
       }
+      if (textTimerRef.current) {
+        clearTimeout(textTimerRef.current);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    if (state?.textOverlay.text !== undefined) {
+      setTextInput(state.textOverlay.text);
+    }
+  }, [state?.textOverlay.text]);
 
   async function fetchState() {
     const res = await fetch("/api/state");
@@ -117,6 +128,18 @@ export default function ManagementPage() {
     });
   }
 
+  function handleTextInputChange(text: string) {
+    setTextInput(text);
+
+    if (textTimerRef.current) {
+      clearTimeout(textTimerRef.current);
+    }
+
+    textTimerRef.current = setTimeout(() => {
+      handleTextOverlayChange({ text });
+    }, 500);
+  }
+
   return (
     <div className="min-h-screen bg-neutral-900">
       <div className="max-w-7xl mx-auto p-6">
@@ -133,8 +156,8 @@ export default function ManagementPage() {
               </label>
               <input
                 type="text"
-                value={state?.textOverlay.text || ""}
-                onChange={(e) => handleTextOverlayChange({ text: e.target.value })}
+                value={textInput}
+                onChange={(e) => handleTextInputChange(e.target.value)}
                 placeholder="Enter text to display..."
                 className="w-full px-3 py-2 border border-neutral-600 bg-neutral-700 text-neutral-100"
               />
