@@ -5,6 +5,7 @@ import { startServer } from "./server.js";
 import { VcastState } from "./state.js";
 import { parseStream } from "./stream.js";
 import { mkdir } from "fs/promises";
+import { spawn } from "bun";
 
 async function cmdInit() {
   const state = new VcastState();
@@ -22,9 +23,9 @@ function tryOpen(url: string) {
   try {
     const platform = process.platform;
     if (platform === "darwin") {
-      Bun.spawn(["open", url], { stdout: "ignore", stderr: "ignore" });
+      spawn(["open", url], { stdout: "ignore", stderr: "ignore" });
     } else if (platform === "win32") {
-      Bun.spawn(["powershell", "-Command", `Start-Process '${url}'`], {
+      spawn(["powershell", "-Command", `Start-Process '${url}'`], {
         stdout: "ignore",
         stderr: "ignore",
       });
