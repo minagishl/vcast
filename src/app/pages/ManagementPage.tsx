@@ -1,0 +1,215 @@
+import { useEffect, useState, useRef, FormEvent } from "react";
+
+type Source = {
+  id: string;
+  platform: string;
+  originalUrl: string;
+  embedUrl: string;
+};
+
+type AudioState = {
+  volume: number;
+  muted: boolean;
+};
+
+type AppState = {
+  sources: Source[];
+  layout: {
+    rows: number;
+    columns: number;
+  };
+  audio: Record<string, AudioState>;
+};
+
+type WsMessage = { type: "state"; data: AppState };
+
+export default function ManagementPage() {
+  const [state, setState] = useState<AppState | null>(null);
+  const [connected, setConnected] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    fetchState();
+    connectWs();
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
+  async function fetchState() {
+    const res = await fetch("/api/state");
+    if (res.ok) {
+      setState(await res.json());
+    }
+  }
+
+  function connectWs() {
+    const protocol = location.protocol === "https:" ? "wss" : "ws";
+    const ws = new WebSocket(`${protocol}://${location.host}/ws`);
+    wsRef.current = ws;
+
+    ws.onopen = () => setConnected(true);
+    ws.onclose = () => {
+      setConnected(false);
+      setTimeout(connectWs, 1500);
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const payload: WsMessage = JSON.parse(event.data);
+        if (payload.type === "state") {
+          setState(payload.data);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+  }
+
+  async function handleAddSource(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const url = formData.get("url") as string;
+    if (!url) return;
+    await fetch("/api/add", {
+      method: "POST",
+      body: JSON.stringify({ url }),
+    });
+    e.currentTarget.reset();
+  }
+
+  async function handleRemove(id: string) {
+    await fetch("/api/remove", {
+      method: "POST",
+      body: JSON.stringify({ id }),
+    });
+  }
+
+  async function handleToggleMute(id: string) {
+    const muted = !(state?.audio?.[id]?.muted ?? false);
+    await fetch("/api/audio", {
+      method: "POST",
+      body: JSON.stringify({ id, muted }),
+    });
+  }
+
+  async function handleVolumeChange(id: string, volume: number) {
+    await fetch("/api/audio", {
+      method: "POST",
+      body: JSON.stringify({ id, volume }),
+    });
+  }
+
+  return (
+    <div className="min-h-screen bg-neutral-900">
+      <div className="max-w-7xl mx-auto p-6">
+        <section className="bg-neutral-800 border border-neutral-700 p-6 mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-neutral-100 m-0">Streams</h2>
+              <p className="text-xs text-neutral-400 uppercase tracking-wide mt-1">
+                Add, remove, and control registered sources.
+              </p>
+            </div>
+            <div
+              className={`px-3 py-1 text-xs font-semibold border uppercase ${
+                connected
+                  ? "bg-green-900 text-green-50 border-green-700"
+                  : "bg-neutral-700 text-neutral-300 border-neutral-600"
+              }`}
+            >
+              {connected ? "live" : "offline"}
+            </div>
+          </div>
+
+          <form onSubmit={handleAddSource} className="flex gap-2 mb-4">
+            <input
+              type="url"
+              name="url"
+              placeholder="https://..."
+              required
+              className="flex-1 px-3 py-2 border border-neutral-600 bg-neutral-700 text-neutral-100"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 bg-neutral-800 text-neutral-50 border border-neutral-700 uppercase text-sm tracking-wide hover:bg-neutral-700 cursor-pointer"
+            >
+              Add Source
+            </button>
+          </form>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-neutral-900">
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wide border-b border-neutral-700 text-neutral-300">
+                    ID
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wide border-b border-neutral-700 text-neutral-300">
+                    Platform
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wide border-b border-neutral-700 text-neutral-300">
+                    URL
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wide border-b border-neutral-700 text-neutral-300">
+                    Audio
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wide border-b border-neutral-700 text-neutral-300">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {state?.sources.map((source) => {
+                  const audio = state.audio[source.id] || {
+                    volume: 1,
+                    muted: false,
+                  };
+                  return (
+                    <tr key={source.id} className="border-b border-neutral-700">
+                      <td className="px-3 py-2 text-neutral-200">{source.id}</td>
+                      <td className="px-3 py-2 text-neutral-200">{source.platform}</td>
+                      <td className="px-3 py-2 max-w-xs overflow-hidden text-ellipsis">
+                        {source.originalUrl}
+                      </td>
+                      <td className="px-3 py-2 text-neutral-200">
+                        <div className="flex gap-2 items-center">
+                          <button
+                            onClick={() => handleToggleMute(source.id)}
+                            className="px-3 py-1 bg-neutral-800 text-neutral-50 border border-neutral-700 text-xs uppercase"
+                          >
+                            {audio.muted ? "Unmute" : "Mute"}
+                          </button>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            value={audio.volume}
+                            onChange={(e) => handleVolumeChange(source.id, Number(e.target.value))}
+                            className="w-32"
+                          />
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-neutral-200">
+                        <button
+                          onClick={() => handleRemove(source.id)}
+                          className="px-3 py-1 bg-neutral-700 text-neutral-200 border border-neutral-600 text-xs uppercase"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}

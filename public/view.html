@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vcast viewer</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    #grid {
+      display: grid;
+      grid-auto-rows: minmax(220px, auto);
+      gap: 12px;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="nav"><strong>vcast</strong> / viewing</div>
+  <div class="container" style="width:100%;max-width:1400px;">
+    <div class="section">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 style="margin:0">Live grid</h2>
+          <p class="small">Drag to reorder, resize panels, control audio per stream.</p>
+        </div>
+        <div class="badge" id="viewerStatus">offline</div>
+      </div>
+      <div id="grid" class="mt-3"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    const state = { data: null };
+    const grid = document.getElementById("grid");
+    const viewerStatus = document.getElementById("viewerStatus");
+    const resizeObservers = new Map();
+    let dragId = null;
+
+    function setStatus(on) {
+      viewerStatus.textContent = on ? "live" : "offline";
+      viewerStatus.style.background = on ? "#14532d" : "#e5e5e5";
+      viewerStatus.style.color = on ? "#f5f5f5" : "#111";
+      viewerStatus.style.borderColor = on ? "#166534" : "#a3a3a3";
+    }
+
+    async function fetchState() {
+      const res = await fetch("/api/state");
+      if (res.ok) {
+        state.data = await res.json();
+        render();
+      }
+    }
+
+    function throttle(fn, wait = 300) {
+      let timeout = null;
+      return (...args) => {
+        if (timeout) return;
+        timeout = setTimeout(() => {
+          fn(...args);
+          timeout = null;
+        }, wait);
+      };
+    }
+
+    const updateWindow = throttle(async (id, dimensions) => {
+      await fetch("/api/window", { method: "POST", body: JSON.stringify({ id, ...dimensions }) });
+    }, 250);
+
+    function bindResize(el, id) {
+      if (resizeObservers.has(id)) resizeObservers.get(id).disconnect();
+      const observer = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const rect = entry.contentRect;
+          const colWidth = grid.clientWidth / (state.data?.layout?.columns || 1);
+          const rowHeight = 220;
+          const widthSpan = Math.max(1, Math.round(rect.width / colWidth));
+          const heightSpan = Math.max(1, Math.round(rect.height / rowHeight));
+          updateWindow(id, { width: widthSpan, height: heightSpan });
+        }
+      });
+      observer.observe(el);
+      resizeObservers.set(id, observer);
+    }
+
+    function render() {
+      if (!state.data) return;
+      grid.style.gridTemplateColumns = `repeat(${state.data.layout.columns}, minmax(0, 1fr))`;
+      grid.innerHTML = "";
+      for (const source of state.data.sources) {
+        const windowInfo = state.data.windows[source.id] || { width: 1, height: 1 };
+        const audio = state.data.audio[source.id] || { volume: 1, muted: false };
+        const panel = document.createElement("div");
+        panel.className = "grid-panel";
+        panel.setAttribute("draggable", "true");
+        panel.dataset.id = source.id;
+        panel.style.gridColumn = `span ${Math.max(1, Math.round(windowInfo.width || 1))}`;
+        panel.style.gridRow = `span ${Math.max(1, Math.round(windowInfo.height || 1))}`;
+
+        panel.innerHTML = `
+            <div class="panel-header">
+              <div>
+                <div class="small">${source.platform}</div>
+                <div>${source.id}</div>
+              </div>
+              <div class="flex gap-2 items-center">
+                <button data-action="mute" data-id="${source.id}">${audio.muted ? "Unmute" : "Mute"}</button>
+                <input type="range" min="0" max="1" step="0.05" data-action="volume" data-id="${source.id}" value="${audio.volume}" />
+              </div>
+            </div>
+            <div class="panel-body">
+              <iframe class="video-frame" src="${source.embedUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            </div>
+          `;
+
+        grid.appendChild(panel);
+        bindResize(panel, source.id);
+      }
+    }
+
+    grid.addEventListener("dragstart", (e) => {
+      const target = e.target instanceof HTMLElement ? e.target.closest("[data-id]") : null;
+      if (!target) return;
+      dragId = target.dataset.id;
+      e.dataTransfer?.setData("text/plain", dragId);
+    });
+
+    grid.addEventListener("dragover", (e) => {
+      e.preventDefault();
+    });
+
+    grid.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      const target = e.target instanceof HTMLElement ? e.target.closest("[data-id]") : null;
+      if (!target || !dragId || !state.data) return;
+      const order = state.data.sources.map((s) => s.id);
+      const from = order.indexOf(dragId);
+      const to = order.indexOf(target.dataset.id);
+      if (from === -1 || to === -1) return;
+      order.splice(from, 1);
+      order.splice(to, 0, dragId);
+      await fetch("/api/reorder", { method: "POST", body: JSON.stringify({ order }) });
+      dragId = null;
+    });
+
+    grid.addEventListener("click", async (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      const action = target.dataset.action;
+      const id = target.dataset.id;
+      if (!action || !id) return;
+      if (action === "mute") {
+        const audio = state.data?.audio?.[id] || { muted: false };
+        await fetch("/api/audio", { method: "POST", body: JSON.stringify({ id, muted: !audio.muted }) });
+      }
+    });
+
+    grid.addEventListener("input", async (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      const action = target.dataset.action;
+      if (action === "volume" && target.dataset.id) {
+        await fetch("/api/audio", {
+          method: "POST",
+          body: JSON.stringify({ id: target.dataset.id, volume: Number(target.value) }),
+        });
+      }
+    });
+
+    function connectWs() {
+      const ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
+      ws.onopen = () => setStatus(true);
+      ws.onclose = () => {
+        setStatus(false);
+        setTimeout(connectWs, 1500);
+      };
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.type === "state") {
+            state.data = payload.data;
+            render();
+          }
+          if (payload.type === "added" || payload.type === "removed" || payload.type === "layout") {
+            fetchState();
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      };
+    }
+
+    fetchState();
+    connectWs();
+  </script>
+</body>
+
+</html>

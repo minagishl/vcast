@@ -1,0 +1,65 @@
+{
+  "name": "vcast",
+  "version": "0.1.0",
+  "description": "Bun-powered local multi-stream caster with CLI, server, management UI, viewer UI, and MCP interface.",
+  "type": "module",
+  "bin": {
+    "vcast": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "bun scripts/build.mjs",
+    "dev:frontend": "vite",
+    "start": "bun dist/index.js start",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "format:write": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\""
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "typescript",
+    "cli",
+    "streaming",
+    "multiview",
+    "mcp"
+  ],
+  "author": "minagishl",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/minagishl/vcast.git"
+  },
+  "homepage": "https://github.com/minagishl/vcast#readme",
+  "bugs": {
+    "url": "https://github.com/minagishl/vcast/issues"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.17",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
+    "@vitejs/plugin-react": "^5.1.2",
+    "esbuild": "^0.27.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.2.8",
+    "postcss": "^8.5.6",
+    "prettier": "^3.7.4",
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.7"
+  }
+}
