@@ -172,7 +172,7 @@ export default function ManagementPage() {
                     <tr key={source.id} className="border-b border-neutral-700">
                       <td className="px-3 py-2 text-neutral-200">{source.id}</td>
                       <td className="px-3 py-2 text-neutral-200">{source.platform}</td>
-                      <td className="px-3 py-2 max-w-xs overflow-hidden text-ellipsis">
+                      <td className="px-3 py-2 max-w-xs overflow-hidden text-ellipsis text-neutral-200">
                         {source.originalUrl}
                       </td>
                       <td className="px-3 py-2 text-neutral-200">
