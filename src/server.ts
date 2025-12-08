@@ -157,6 +157,21 @@ export async function startServer(options: ServerOptions = {}) {
         return json({ ok: true });
       }
 
+      if (url.pathname === "/api/text-overlay" && request.method === "POST") {
+        const body = await readJson<{
+          text?: string;
+          position?: "top" | "bottom" | "left" | "right";
+          scrolling?: boolean;
+        }>(request);
+        await state.updateTextOverlay({
+          text: body.text,
+          position: body.position,
+          scrolling: body.scrolling,
+        });
+        broadcast({ type: "textOverlay", data: state.snapshot().textOverlay });
+        return json(state.snapshot().textOverlay);
+      }
+
       return serveStatic(url.pathname);
     },
     websocket: {
@@ -203,6 +218,10 @@ export async function startServer(options: ServerOptions = {}) {
           if (type === "reorder" && Array.isArray(payload.order)) {
             await state.reorder(payload.order);
             broadcast({ type: "state", data: state.snapshot() });
+          }
+          if (type === "textOverlay" && payload.data) {
+            await state.updateTextOverlay(payload.data);
+            broadcast({ type: "textOverlay", data: state.snapshot().textOverlay });
           }
           if (type === "ping") {
             ws.send(JSON.stringify({ type: "pong" }));

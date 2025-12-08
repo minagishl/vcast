@@ -12,6 +12,12 @@ type AudioState = {
   muted: boolean;
 };
 
+type TextOverlay = {
+  text: string;
+  position: "top" | "bottom" | "left" | "right";
+  scrolling: boolean;
+};
+
 type AppState = {
   sources: Source[];
   layout: {
@@ -19,6 +25,7 @@ type AppState = {
     columns: number;
   };
   audio: Record<string, AudioState>;
+  textOverlay: TextOverlay;
 };
 
 type WsMessage = { type: "state"; data: AppState };
@@ -103,9 +110,74 @@ export default function ManagementPage() {
     });
   }
 
+  async function handleTextOverlayChange(overlay: Partial<TextOverlay>) {
+    await fetch("/api/text-overlay", {
+      method: "POST",
+      body: JSON.stringify(overlay),
+    });
+  }
+
   return (
     <div className="min-h-screen bg-neutral-900">
       <div className="max-w-7xl mx-auto p-6">
+        <section className="bg-neutral-800 border border-neutral-700 p-6 mb-4">
+          <h2 className="text-2xl font-bold text-neutral-100 m-0 mb-2">Text Overlay</h2>
+          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-4">
+            Display text on the viewer screen
+          </p>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs text-neutral-300 uppercase tracking-wide mb-2">
+                Text Content
+              </label>
+              <input
+                type="text"
+                value={state?.textOverlay.text || ""}
+                onChange={(e) => handleTextOverlayChange({ text: e.target.value })}
+                placeholder="Enter text to display..."
+                className="w-full px-3 py-2 border border-neutral-600 bg-neutral-700 text-neutral-100"
+              />
+            </div>
+
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-xs text-neutral-300 uppercase tracking-wide mb-2">
+                  Position
+                </label>
+                <select
+                  value={state?.textOverlay.position || "top"}
+                  onChange={(e) =>
+                    handleTextOverlayChange({
+                      position: e.target.value as "top" | "bottom" | "left" | "right",
+                    })
+                  }
+                  className="w-full px-4 py-2.5 border border-neutral-600 bg-neutral-700 text-neutral-100"
+                >
+                  <option value="top">Top</option>
+                  <option value="bottom">Bottom</option>
+                  <option value="left">Left</option>
+                  <option value="right">Right</option>
+                </select>
+              </div>
+
+              <div className="flex items-end">
+                <label className="flex items-center gap-2 px-4 py-3 bg-neutral-700 border border-neutral-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={state?.textOverlay.scrolling || false}
+                    onChange={(e) => handleTextOverlayChange({ scrolling: e.target.checked })}
+                    className="size-4"
+                  />
+                  <span className="text-xs text-neutral-300 uppercase tracking-wide">
+                    Enable Scrolling
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="bg-neutral-800 border border-neutral-700 p-6 mb-4">
           <div className="flex items-center justify-between mb-4">
             <div>

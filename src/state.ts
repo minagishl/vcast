@@ -16,12 +16,19 @@ export type Layout = {
   columns: number;
 };
 
+export type TextOverlay = {
+  text: string;
+  position: "top" | "bottom" | "left" | "right";
+  scrolling: boolean;
+};
+
 export type ConfigShape = {
   version: number;
   sources: StreamSource[];
   layout: Layout;
   audio: Record<string, { volume: number; muted: boolean }>;
   windows: Record<string, { x: number; y: number; width: number; height: number }>;
+  textOverlay: TextOverlay;
 };
 
 const DEFAULT_CONFIG: ConfigShape = {
@@ -30,6 +37,7 @@ const DEFAULT_CONFIG: ConfigShape = {
   layout: { rows: 2, columns: 2 },
   audio: {},
   windows: {},
+  textOverlay: { text: "", position: "top", scrolling: false },
 };
 
 async function ensureDir(path: string) {
@@ -67,6 +75,7 @@ export class VcastState {
         sources: parsed.sources || [],
         audio: parsed.audio || {},
         windows: parsed.windows || {},
+        textOverlay: parsed.textOverlay || DEFAULT_CONFIG.textOverlay,
       };
       this.emit();
     } catch (err) {
@@ -179,6 +188,16 @@ export class VcastState {
         if (bi === -1) return -1;
         return ai - bi;
       });
+    });
+  }
+
+  async updateTextOverlay(overlay: Partial<TextOverlay>) {
+    await this.update(() => {
+      this.data.textOverlay = {
+        text: overlay.text ?? this.data.textOverlay.text,
+        position: overlay.position ?? this.data.textOverlay.position,
+        scrolling: overlay.scrolling ?? this.data.textOverlay.scrolling,
+      };
     });
   }
 }
