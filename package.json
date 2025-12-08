@@ -17,7 +17,8 @@
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky"
   },
   "files": [
     "dist",
@@ -57,6 +58,7 @@
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.2.8",
+    "husky": "^9.1.7",
     "postcss": "^8.5.6",
     "prettier": "^3.7.4",
     "tailwindcss": "^4.1.17",
