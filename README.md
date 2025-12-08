@@ -70,3 +70,7 @@ The config is stored at `~/.vcast/config.json` and is watched for external chang
 - Package name/binary: `vcast`
 - No external network is required for the server/UI itself; streaming URLs load directly from their platforms.
 - Static assets are served from the bundled `public/` directory.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
