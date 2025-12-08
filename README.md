@@ -69,7 +69,21 @@ The config is stored at `~/.vcast/config.json` and is watched for external chang
 - Language: TypeScript
 - Package name/binary: `vcast`
 - No external network is required for the server/UI itself; streaming URLs load directly from their platforms.
-- Static assets are served from the bundled `public/` directory.
+- Frontend: React + Vite + Tailwind CSS (source in `src/app/`, built to `dist/public/`)
+- Backend: Bun TypeScript server (source in `src/`, compiled to `dist/`)
+
+### Development workflow
+
+```sh
+# Build backend + frontend
+bun run build
+
+# Run frontend dev server (with hot reload)
+bun run dev:frontend
+
+# Run production build
+bun run start
+```
 
 ## License
 

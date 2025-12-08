@@ -12,6 +12,7 @@ export type ServerOptions = {
 
 type WebSocketClient = ServerWebSocket<{ kind: "client" }>;
 
+// Points to dist/public when running the built version
 const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), "public");
 
 async function readJson<T>(request: Request): Promise<T> {
