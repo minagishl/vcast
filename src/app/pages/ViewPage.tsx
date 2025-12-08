@@ -22,12 +22,14 @@ type AppState = {
   audio: Record<string, { volume: number; muted: boolean }>;
   windows: Record<string, { width: number; height: number; x?: number; y?: number }>;
   textOverlay: TextOverlay;
+  showIds: boolean;
 };
 
 type WsMessage =
   | { type: "state"; data: AppState }
   | { type: "added" | "removed" | "layout" }
-  | { type: "textOverlay"; data: TextOverlay };
+  | { type: "textOverlay"; data: TextOverlay }
+  | { type: "showIds"; data: boolean };
 
 function calculateLayout(count: number) {
   if (count === 0) return { columns: 1, rows: 1 };
@@ -91,6 +93,9 @@ export default function ViewPage() {
         if (payload.type === "textOverlay") {
           setState((prev) => (prev ? { ...prev, textOverlay: payload.data } : null));
         }
+        if (payload.type === "showIds") {
+          setState((prev) => (prev ? { ...prev, showIds: payload.data } : null));
+        }
       } catch (err) {
         console.error(err);
       }
@@ -128,7 +133,7 @@ export default function ViewPage() {
           {row.map((source) => (
             <div
               key={source.id}
-              className="bg-black border border-neutral-800 overflow-hidden"
+              className="bg-black border border-neutral-800 overflow-hidden relative"
               style={{ flex: `0 0 ${100 / layout.columns}%` }}
             >
               <iframe
@@ -137,6 +142,11 @@ export default function ViewPage() {
                 allowFullScreen
                 className="w-full h-full border-0"
               />
+              {state.showIds && (
+                <div className="absolute top-2 left-2 bg-black/80 text-white px-3 py-1 text-sm font-mono font-bold border border-neutral-600 z-20">
+                  {source.id}
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -29,6 +29,7 @@ export type ConfigShape = {
   audio: Record<string, { volume: number; muted: boolean }>;
   windows: Record<string, { x: number; y: number; width: number; height: number }>;
   textOverlay: TextOverlay;
+  showIds: boolean;
 };
 
 const DEFAULT_CONFIG: ConfigShape = {
@@ -38,6 +39,7 @@ const DEFAULT_CONFIG: ConfigShape = {
   audio: {},
   windows: {},
   textOverlay: { text: "", position: "top", scrolling: false },
+  showIds: true,
 };
 
 async function ensureDir(path: string) {
@@ -76,6 +78,7 @@ export class VcastState {
         audio: parsed.audio || {},
         windows: parsed.windows || {},
         textOverlay: parsed.textOverlay || DEFAULT_CONFIG.textOverlay,
+        showIds: parsed.showIds ?? DEFAULT_CONFIG.showIds,
       };
       this.emit();
     } catch (err) {
@@ -198,6 +201,12 @@ export class VcastState {
         position: overlay.position ?? this.data.textOverlay.position,
         scrolling: overlay.scrolling ?? this.data.textOverlay.scrolling,
       };
+    });
+  }
+
+  async updateShowIds(showIds: boolean) {
+    await this.update(() => {
+      this.data.showIds = showIds;
     });
   }
 }

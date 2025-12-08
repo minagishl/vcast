@@ -26,6 +26,7 @@ type AppState = {
   };
   audio: Record<string, AudioState>;
   textOverlay: TextOverlay;
+  showIds: boolean;
 };
 
 type WsMessage = { type: "state"; data: AppState };
@@ -140,6 +141,13 @@ export default function ManagementPage() {
     }, 500);
   }
 
+  async function handleShowIdsChange(showIds: boolean) {
+    await fetch("/api/show-ids", {
+      method: "POST",
+      body: JSON.stringify({ showIds }),
+    });
+  }
+
   return (
     <div className="min-h-screen bg-neutral-900">
       <div className="max-w-7xl mx-auto p-6">
@@ -198,6 +206,30 @@ export default function ManagementPage() {
                 </label>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="bg-neutral-800 border border-neutral-700 p-6 mb-4">
+          <h2 className="text-2xl font-bold text-neutral-100 m-0 mb-2">Display Settings</h2>
+          <p className="text-xs text-neutral-400 uppercase tracking-wide mb-4">
+            Control viewer display options
+          </p>
+
+          <div>
+            <label className="flex items-center gap-2 px-4 py-3 bg-neutral-700 border border-neutral-600 cursor-pointer w-fit">
+              <input
+                type="checkbox"
+                checked={state?.showIds ?? true}
+                onChange={(e) => handleShowIdsChange(e.target.checked)}
+                className="size-4"
+              />
+              <span className="text-xs text-neutral-300 uppercase tracking-wide">
+                Show Stream IDs
+              </span>
+            </label>
+            <p className="text-xs text-neutral-400 mt-2 ml-1">
+              Display stream IDs in the top-left corner of each video
+            </p>
           </div>
         </section>
 

@@ -172,6 +172,14 @@ export async function startServer(options: ServerOptions = {}) {
         return json(state.snapshot().textOverlay);
       }
 
+      if (url.pathname === "/api/show-ids" && request.method === "POST") {
+        const body = await readJson<{ showIds?: boolean }>(request);
+        if (body.showIds === undefined) return json({ error: "showIds required" }, 400);
+        await state.updateShowIds(body.showIds);
+        broadcast({ type: "showIds", data: state.snapshot().showIds });
+        return json({ showIds: state.snapshot().showIds });
+      }
+
       return serveStatic(url.pathname);
     },
     websocket: {
@@ -222,6 +230,10 @@ export async function startServer(options: ServerOptions = {}) {
           if (type === "textOverlay" && payload.data) {
             await state.updateTextOverlay(payload.data);
             broadcast({ type: "textOverlay", data: state.snapshot().textOverlay });
+          }
+          if (type === "showIds" && typeof payload.data === "boolean") {
+            await state.updateShowIds(payload.data);
+            broadcast({ type: "showIds", data: state.snapshot().showIds });
           }
           if (type === "ping") {
             ws.send(JSON.stringify({ type: "pong" }));
