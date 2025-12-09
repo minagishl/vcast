@@ -50,7 +50,7 @@ class YouTubeProvider extends StreamProvider {
     }
   }
   embedUrl(id: string): string {
-    return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1`;
+    return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`;
   }
 }
 
