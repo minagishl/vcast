@@ -112,6 +112,36 @@ export default function ManagementPage() {
     });
   }
 
+  async function handleMoveUp(id: string) {
+    if (!state) return;
+    const currentIndex = state.sources.findIndex((s) => s.id === id);
+    if (currentIndex <= 0) return;
+    const newOrder = state.sources.map((s) => s.id);
+    [newOrder[currentIndex - 1], newOrder[currentIndex]] = [
+      newOrder[currentIndex],
+      newOrder[currentIndex - 1],
+    ];
+    await fetch("/api/reorder", {
+      method: "POST",
+      body: JSON.stringify({ order: newOrder }),
+    });
+  }
+
+  async function handleMoveDown(id: string) {
+    if (!state) return;
+    const currentIndex = state.sources.findIndex((s) => s.id === id);
+    if (currentIndex < 0 || currentIndex >= state.sources.length - 1) return;
+    const newOrder = state.sources.map((s) => s.id);
+    [newOrder[currentIndex], newOrder[currentIndex + 1]] = [
+      newOrder[currentIndex + 1],
+      newOrder[currentIndex],
+    ];
+    await fetch("/api/reorder", {
+      method: "POST",
+      body: JSON.stringify({ order: newOrder }),
+    });
+  }
+
   async function handleToggleMute(id: string) {
     const muted = !(state?.audio?.[id]?.muted ?? false);
     await fetch("/api/audio", {
@@ -328,6 +358,9 @@ export default function ManagementPage() {
               <thead>
                 <tr className="bg-neutral-900">
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wide border-b border-neutral-700 text-neutral-300">
+                    Order
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs uppercase tracking-wide border-b border-neutral-700 text-neutral-300">
                     ID
                   </th>
                   <th className="px-3 py-2 text-left text-xs uppercase tracking-wide border-b border-neutral-700 text-neutral-300">
@@ -345,13 +378,35 @@ export default function ManagementPage() {
                 </tr>
               </thead>
               <tbody>
-                {state?.sources.map((source) => {
+                {state?.sources.map((source, index) => {
                   const audio = state.audio[source.id] || {
                     volume: 1,
                     muted: false,
                   };
+                  const isFirst = index === 0;
+                  const isLast = index === (state?.sources.length || 0) - 1;
                   return (
                     <tr key={source.id} className="border-b border-neutral-700">
+                      <td className="px-3 py-2 text-neutral-200">
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleMoveUp(source.id)}
+                            disabled={isFirst}
+                            className="px-2 py-1 bg-neutral-800 text-neutral-50 border border-neutral-700 text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Move up"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            onClick={() => handleMoveDown(source.id)}
+                            disabled={isLast}
+                            className="px-2 py-1 bg-neutral-800 text-neutral-50 border border-neutral-700 text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Move down"
+                          >
+                            ↓
+                          </button>
+                        </div>
+                      </td>
                       <td className="px-3 py-2 text-neutral-200">{source.id}</td>
                       <td className="px-3 py-2 text-neutral-200">{source.platform}</td>
                       <td className="px-3 py-2 max-w-xs overflow-hidden text-ellipsis text-neutral-200">
