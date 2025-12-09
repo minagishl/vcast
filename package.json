@@ -1,6 +1,6 @@
 {
   "name": "vcast",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Local multi-stream caster with CLI, server, management UI, viewer UI, and MCP interface.",
   "type": "module",
   "bin": {
