@@ -54,7 +54,7 @@ function getNetworkAddress(): string | null {
 async function cmdStart(options: { port: string; host: boolean; open: boolean }) {
   const port = Number(options.port);
   const host = options.host ? "0.0.0.0" : "127.0.0.1";
-  const { address } = await startServer({ port, host });
+  const { address, broadcast, getClientCount } = await startServer({ port, host });
 
   console.log("Management UI:", `${address}/`);
   console.log("Viewing UI:", `${address}/view.html`);
@@ -70,8 +70,19 @@ async function cmdStart(options: { port: string; host: boolean; open: boolean })
   }
 
   if (options.open) {
-    tryOpen(`${address}/`);
-    tryOpen(`${address}/view.html`);
+    // Send reload message to existing clients
+    broadcast({ type: "reload" });
+
+    // Wait a bit to see if any clients respond
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // If no clients are connected, open new browser tabs
+    if (getClientCount() === 0) {
+      tryOpen(`${address}/`);
+      tryOpen(`${address}/view.html`);
+    } else {
+      console.log("Reloaded existing browser tabs");
+    }
   }
 
   // keep the process alive

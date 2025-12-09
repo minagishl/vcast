@@ -40,7 +40,8 @@ type WsMessage =
   | { type: "textOverlay"; data: TextOverlay }
   | { type: "showIds"; data: boolean }
   | { type: "youtubeNoCookie"; data: boolean }
-  | { type: "hideCursor"; data: boolean };
+  | { type: "hideCursor"; data: boolean }
+  | { type: "reload" };
 
 function calculateLayout(count: number) {
   if (count === 0) return { columns: 1, rows: 1 };
@@ -241,6 +242,9 @@ export default function ViewPage() {
         }
         if (payload.type === "hideCursor") {
           setState((prev) => (prev ? { ...prev, hideCursor: payload.data } : null));
+        }
+        if (payload.type === "reload") {
+          window.location.reload();
         }
       } catch (err) {
         console.error(err);

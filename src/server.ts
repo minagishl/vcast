@@ -272,5 +272,8 @@ export async function startServer(options: ServerOptions = {}) {
 
   const address = `http://${server.hostname}:${server.port}`;
   console.log(`vcast server running at ${address}`);
-  return { server, state, address };
+
+  const getClientCount = () => clients.size;
+
+  return { server, state, address, broadcast, getClientCount };
 }

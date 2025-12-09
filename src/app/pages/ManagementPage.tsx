@@ -31,7 +31,7 @@ type AppState = {
   hideCursor: boolean;
 };
 
-type WsMessage = { type: "state"; data: AppState };
+type WsMessage = { type: "state"; data: AppState } | { type: "reload" };
 
 export default function ManagementPage() {
   const [state, setState] = useState<AppState | null>(null);
@@ -83,6 +83,9 @@ export default function ManagementPage() {
         const payload: WsMessage = JSON.parse(event.data);
         if (payload.type === "state") {
           setState(payload.data);
+        }
+        if (payload.type === "reload") {
+          window.location.reload();
         }
       } catch (err) {
         console.error(err);
