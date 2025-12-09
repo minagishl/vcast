@@ -180,6 +180,15 @@ export async function startServer(options: ServerOptions = {}) {
         return json({ showIds: state.snapshot().showIds });
       }
 
+      if (url.pathname === "/api/youtube-nocookie" && request.method === "POST") {
+        const body = await readJson<{ youtubeNoCookie?: boolean }>(request);
+        if (body.youtubeNoCookie === undefined)
+          return json({ error: "youtubeNoCookie required" }, 400);
+        await state.updateYoutubeNoCookie(body.youtubeNoCookie);
+        broadcast({ type: "youtubeNoCookie", data: state.snapshot().youtubeNoCookie });
+        return json({ youtubeNoCookie: state.snapshot().youtubeNoCookie });
+      }
+
       return serveStatic(url.pathname);
     },
     websocket: {
@@ -234,6 +243,10 @@ export async function startServer(options: ServerOptions = {}) {
           if (type === "showIds" && typeof payload.data === "boolean") {
             await state.updateShowIds(payload.data);
             broadcast({ type: "showIds", data: state.snapshot().showIds });
+          }
+          if (type === "youtubeNoCookie" && typeof payload.data === "boolean") {
+            await state.updateYoutubeNoCookie(payload.data);
+            broadcast({ type: "youtubeNoCookie", data: state.snapshot().youtubeNoCookie });
           }
           if (type === "ping") {
             ws.send(JSON.stringify({ type: "pong" }));

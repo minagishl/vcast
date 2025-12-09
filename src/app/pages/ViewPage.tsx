@@ -30,13 +30,15 @@ type AppState = {
   windows: Record<string, { width: number; height: number; x?: number; y?: number }>;
   textOverlay: TextOverlay;
   showIds: boolean;
+  youtubeNoCookie: boolean;
 };
 
 type WsMessage =
   | { type: "state"; data: AppState }
   | { type: "added" | "removed" | "layout" }
   | { type: "textOverlay"; data: TextOverlay }
-  | { type: "showIds"; data: boolean };
+  | { type: "showIds"; data: boolean }
+  | { type: "youtubeNoCookie"; data: boolean };
 
 function calculateLayout(count: number) {
   if (count === 0) return { columns: 1, rows: 1 };
@@ -63,12 +65,14 @@ function StreamView({
   showId,
   ytReady,
   layoutColumns,
+  youtubeNoCookie,
 }: {
   source: Source;
   audioState: { volume: number; muted: boolean };
   showId: boolean;
   ytReady: boolean;
   layoutColumns: number;
+  youtubeNoCookie: boolean;
 }) {
   const playerRef = useRef<any>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -86,6 +90,7 @@ function StreamView({
 
     playerRef.current = new window.YT.Player(containerRef.current, {
       videoId,
+      host: youtubeNoCookie ? "https://www.youtube-nocookie.com" : "https://www.youtube.com",
       playerVars: {
         autoplay: 1,
         controls: 1,
@@ -109,7 +114,7 @@ function StreamView({
         playerRef.current.destroy();
       }
     };
-  }, [isYouTube, ytReady, source.embedUrl]);
+  }, [isYouTube, ytReady, source.embedUrl, youtubeNoCookie]);
 
   // Update YouTube audio state
   useEffect(() => {
@@ -229,6 +234,9 @@ export default function ViewPage() {
         if (payload.type === "showIds") {
           setState((prev) => (prev ? { ...prev, showIds: payload.data } : null));
         }
+        if (payload.type === "youtubeNoCookie") {
+          setState((prev) => (prev ? { ...prev, youtubeNoCookie: payload.data } : null));
+        }
       } catch (err) {
         console.error(err);
       }
@@ -274,6 +282,7 @@ export default function ViewPage() {
                 showId={state.showIds}
                 ytReady={ytReady}
                 layoutColumns={layout.columns}
+                youtubeNoCookie={state.youtubeNoCookie}
               />
             );
           })}

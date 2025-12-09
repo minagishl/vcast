@@ -27,6 +27,7 @@ type AppState = {
   audio: Record<string, AudioState>;
   textOverlay: TextOverlay;
   showIds: boolean;
+  youtubeNoCookie: boolean;
 };
 
 type WsMessage = { type: "state"; data: AppState };
@@ -148,6 +149,13 @@ export default function ManagementPage() {
     });
   }
 
+  async function handleYoutubeNoCookieChange(youtubeNoCookie: boolean) {
+    await fetch("/api/youtube-nocookie", {
+      method: "POST",
+      body: JSON.stringify({ youtubeNoCookie }),
+    });
+  }
+
   return (
     <div className="min-h-screen bg-neutral-900">
       <div className="max-w-7xl mx-auto p-6">
@@ -215,21 +223,40 @@ export default function ManagementPage() {
             Control viewer display options
           </p>
 
-          <div>
-            <label className="flex items-center gap-2 px-4 py-3 bg-neutral-700 border border-neutral-600 cursor-pointer w-fit">
-              <input
-                type="checkbox"
-                checked={state?.showIds ?? true}
-                onChange={(e) => handleShowIdsChange(e.target.checked)}
-                className="size-4"
-              />
-              <span className="text-xs text-neutral-300 uppercase tracking-wide">
-                Show Stream IDs
-              </span>
-            </label>
-            <p className="text-xs text-neutral-400 mt-2 ml-1">
-              Display stream IDs in the top-left corner of each video
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="flex items-center gap-2 px-4 py-3 bg-neutral-700 border border-neutral-600 cursor-pointer w-fit">
+                <input
+                  type="checkbox"
+                  checked={state?.showIds ?? true}
+                  onChange={(e) => handleShowIdsChange(e.target.checked)}
+                  className="size-4"
+                />
+                <span className="text-xs text-neutral-300 uppercase tracking-wide">
+                  Show Stream IDs
+                </span>
+              </label>
+              <p className="text-xs text-neutral-400 mt-2 ml-1">
+                Display stream IDs in the top-left corner of each video
+              </p>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 px-4 py-3 bg-neutral-700 border border-neutral-600 cursor-pointer w-fit">
+                <input
+                  type="checkbox"
+                  checked={state?.youtubeNoCookie ?? true}
+                  onChange={(e) => handleYoutubeNoCookieChange(e.target.checked)}
+                  className="size-4"
+                />
+                <span className="text-xs text-neutral-300 uppercase tracking-wide">
+                  YouTube Privacy Mode (No Cookies)
+                </span>
+              </label>
+              <p className="text-xs text-neutral-400 mt-2 ml-1">
+                Use youtube-nocookie.com to prevent tracking cookies
+              </p>
+            </div>
           </div>
         </section>
 

@@ -30,6 +30,7 @@ export type ConfigShape = {
   windows: Record<string, { x: number; y: number; width: number; height: number }>;
   textOverlay: TextOverlay;
   showIds: boolean;
+  youtubeNoCookie: boolean;
 };
 
 const DEFAULT_CONFIG: ConfigShape = {
@@ -40,6 +41,7 @@ const DEFAULT_CONFIG: ConfigShape = {
   windows: {},
   textOverlay: { text: "", position: "top", scrolling: false },
   showIds: true,
+  youtubeNoCookie: true,
 };
 
 async function ensureDir(path: string) {
@@ -79,6 +81,7 @@ export class VcastState {
         windows: parsed.windows || {},
         textOverlay: parsed.textOverlay || DEFAULT_CONFIG.textOverlay,
         showIds: parsed.showIds ?? DEFAULT_CONFIG.showIds,
+        youtubeNoCookie: parsed.youtubeNoCookie ?? DEFAULT_CONFIG.youtubeNoCookie,
       };
       this.emit();
     } catch (err) {
@@ -207,6 +210,12 @@ export class VcastState {
   async updateShowIds(showIds: boolean) {
     await this.update(() => {
       this.data.showIds = showIds;
+    });
+  }
+
+  async updateYoutubeNoCookie(youtubeNoCookie: boolean) {
+    await this.update(() => {
+      this.data.youtubeNoCookie = youtubeNoCookie;
     });
   }
 }
