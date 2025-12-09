@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Per-stream audio controls now properly sync mute/volume for YouTube and generic sources via the IFrame API
-- `vcast start --open` reloads existing management/viewer tabs instead of spawning duplicates
+- `vcast start` auto-open now reloads existing management/viewer tabs instead of spawning duplicates (use `--no-open` to disable)
 
 ## [v0.1.1] - 2025-12-09
 
