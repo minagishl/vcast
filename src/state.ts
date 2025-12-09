@@ -31,6 +31,7 @@ export type ConfigShape = {
   textOverlay: TextOverlay;
   showIds: boolean;
   youtubeNoCookie: boolean;
+  hideCursor: boolean;
 };
 
 const DEFAULT_CONFIG: ConfigShape = {
@@ -42,6 +43,7 @@ const DEFAULT_CONFIG: ConfigShape = {
   textOverlay: { text: "", position: "top", scrolling: false },
   showIds: true,
   youtubeNoCookie: true,
+  hideCursor: false,
 };
 
 async function ensureDir(path: string) {
@@ -82,6 +84,7 @@ export class VcastState {
         textOverlay: parsed.textOverlay || DEFAULT_CONFIG.textOverlay,
         showIds: parsed.showIds ?? DEFAULT_CONFIG.showIds,
         youtubeNoCookie: parsed.youtubeNoCookie ?? DEFAULT_CONFIG.youtubeNoCookie,
+        hideCursor: parsed.hideCursor ?? DEFAULT_CONFIG.hideCursor,
       };
       this.emit();
     } catch (err) {
@@ -216,6 +219,12 @@ export class VcastState {
   async updateYoutubeNoCookie(youtubeNoCookie: boolean) {
     await this.update(() => {
       this.data.youtubeNoCookie = youtubeNoCookie;
+    });
+  }
+
+  async updateHideCursor(hideCursor: boolean) {
+    await this.update(() => {
+      this.data.hideCursor = hideCursor;
     });
   }
 }

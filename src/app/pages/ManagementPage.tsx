@@ -28,6 +28,7 @@ type AppState = {
   textOverlay: TextOverlay;
   showIds: boolean;
   youtubeNoCookie: boolean;
+  hideCursor: boolean;
 };
 
 type WsMessage = { type: "state"; data: AppState };
@@ -156,6 +157,13 @@ export default function ManagementPage() {
     });
   }
 
+  async function handleHideCursorChange(hideCursor: boolean) {
+    await fetch("/api/hide-cursor", {
+      method: "POST",
+      body: JSON.stringify({ hideCursor }),
+    });
+  }
+
   return (
     <div className="min-h-screen bg-neutral-900">
       <div className="max-w-7xl mx-auto p-6">
@@ -255,6 +263,23 @@ export default function ManagementPage() {
               </label>
               <p className="text-xs text-neutral-400 mt-2 ml-1">
                 Use youtube-nocookie.com to prevent tracking cookies
+              </p>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 px-4 py-3 bg-neutral-700 border border-neutral-600 cursor-pointer w-fit">
+                <input
+                  type="checkbox"
+                  checked={state?.hideCursor ?? false}
+                  onChange={(e) => handleHideCursorChange(e.target.checked)}
+                  className="size-4"
+                />
+                <span className="text-xs text-neutral-300 uppercase tracking-wide">
+                  Hide Cursor
+                </span>
+              </label>
+              <p className="text-xs text-neutral-400 mt-2 ml-1">
+                Hide mouse cursor on the viewer screen
               </p>
             </div>
           </div>

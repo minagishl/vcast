@@ -189,6 +189,14 @@ export async function startServer(options: ServerOptions = {}) {
         return json({ youtubeNoCookie: state.snapshot().youtubeNoCookie });
       }
 
+      if (url.pathname === "/api/hide-cursor" && request.method === "POST") {
+        const body = await readJson<{ hideCursor?: boolean }>(request);
+        if (body.hideCursor === undefined) return json({ error: "hideCursor required" }, 400);
+        await state.updateHideCursor(body.hideCursor);
+        broadcast({ type: "hideCursor", data: state.snapshot().hideCursor });
+        return json({ hideCursor: state.snapshot().hideCursor });
+      }
+
       return serveStatic(url.pathname);
     },
     websocket: {
@@ -247,6 +255,10 @@ export async function startServer(options: ServerOptions = {}) {
           if (type === "youtubeNoCookie" && typeof payload.data === "boolean") {
             await state.updateYoutubeNoCookie(payload.data);
             broadcast({ type: "youtubeNoCookie", data: state.snapshot().youtubeNoCookie });
+          }
+          if (type === "hideCursor" && typeof payload.data === "boolean") {
+            await state.updateHideCursor(payload.data);
+            broadcast({ type: "hideCursor", data: state.snapshot().hideCursor });
           }
           if (type === "ping") {
             ws.send(JSON.stringify({ type: "pong" }));

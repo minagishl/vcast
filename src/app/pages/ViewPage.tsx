@@ -31,6 +31,7 @@ type AppState = {
   textOverlay: TextOverlay;
   showIds: boolean;
   youtubeNoCookie: boolean;
+  hideCursor: boolean;
 };
 
 type WsMessage =
@@ -38,7 +39,8 @@ type WsMessage =
   | { type: "added" | "removed" | "layout" }
   | { type: "textOverlay"; data: TextOverlay }
   | { type: "showIds"; data: boolean }
-  | { type: "youtubeNoCookie"; data: boolean };
+  | { type: "youtubeNoCookie"; data: boolean }
+  | { type: "hideCursor"; data: boolean };
 
 function calculateLayout(count: number) {
   if (count === 0) return { columns: 1, rows: 1 };
@@ -237,6 +239,9 @@ export default function ViewPage() {
         if (payload.type === "youtubeNoCookie") {
           setState((prev) => (prev ? { ...prev, youtubeNoCookie: payload.data } : null));
         }
+        if (payload.type === "hideCursor") {
+          setState((prev) => (prev ? { ...prev, hideCursor: payload.data } : null));
+        }
       } catch (err) {
         console.error(err);
       }
@@ -268,7 +273,9 @@ export default function ViewPage() {
   };
 
   return (
-    <div className="h-screen w-screen bg-neutral-900 p-1 m-0 overflow-hidden flex flex-col gap-1 relative">
+    <div
+      className={`h-screen w-screen bg-neutral-900 p-1 m-0 overflow-hidden flex flex-col gap-1 relative ${state.hideCursor ? "cursor-none" : ""}`}
+    >
       {rows.map((row, rowIndex) => (
         <div key={rowIndex} className="flex-1 flex gap-1 justify-center">
           {row.map((source) => {
