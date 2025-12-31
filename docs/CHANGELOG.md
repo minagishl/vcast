@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- IPTV/HLS playback support for `.m3u8` sources in the viewer
+
 ## [v0.1.2] - 2025-12-09
 
 ### Added

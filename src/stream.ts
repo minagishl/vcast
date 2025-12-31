@@ -111,6 +111,32 @@ class VimeoProvider extends StreamProvider {
   }
 }
 
+class IptvProvider extends StreamProvider {
+  name = "iptv";
+  match(url: string): boolean {
+    return /^https?:\/\//i.test(url) && /\.m3u8(?:$|\?)/i.test(url);
+  }
+  extractId(url: string): string | null {
+    return Buffer.from(url)
+      .toString("base64")
+      .replace(/[^a-zA-Z0-9]/g, "");
+  }
+  embedUrl(): string {
+    return "";
+  }
+  parse(url: string): StreamParseResult | null {
+    if (!this.match(url)) return null;
+    const id = this.extractId(url);
+    if (!id) return null;
+    return {
+      id: `${this.name}:${id}`,
+      platform: this.name,
+      embedUrl: url,
+      originalUrl: url,
+    };
+  }
+}
+
 class GenericProvider extends StreamProvider {
   name = "generic";
   match(url: string): boolean {
@@ -142,6 +168,7 @@ export const providers: StreamProvider[] = [
   new TwitchProvider(),
   new NicoProvider(),
   new VimeoProvider(),
+  new IptvProvider(),
   new GenericProvider(),
 ];
 

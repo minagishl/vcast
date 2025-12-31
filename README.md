@@ -8,7 +8,7 @@ Local-first multi-stream casting toolkit powered by Bun. Includes a CLI, lightwe
 - Local HTTP + WebSocket server (no cloud dependencies)
 - Management UI to add/remove streams, edit layout, and control audio
 - Viewer UI with live grid (drag to reorder, resize panels, per-stream audio controls)
-- Modular stream detection (YouTube, Twitch, Nicovideo, Vimeo, generic)
+- Modular stream detection (YouTube, Twitch, Nicovideo, Vimeo, IPTV/HLS (.m3u8), generic)
 - Embedded MCP JSON-RPC endpoint for automation
 
 ## Install

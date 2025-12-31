@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import Hls from "hls.js";
 
 declare global {
   interface Window {
@@ -80,9 +81,13 @@ function StreamView({
   const playerRef = useRef<any>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const playAttemptRef = useRef(0);
+  const autoMutedRef = useRef(false);
 
   const isYouTube = source.platform === "youtube";
-  const isGeneric = source.platform === "generic";
+  const isHls = /\.m3u8(?:$|\?)/i.test(source.embedUrl);
+  const isFileVideo = /\.(mp4|webm|ogg)$/i.test(source.embedUrl);
+  const useVideoElement = !isYouTube && (isHls || isFileVideo);
 
   // YouTube Player setup
   useEffect(() => {
@@ -135,13 +140,83 @@ function StreamView({
     }
   }, [isYouTube, audioState.muted, audioState.volume]);
 
-  // Update generic video audio state
+  // Update video audio state
   useEffect(() => {
-    if (!isGeneric || !videoRef.current) return;
+    if (!useVideoElement || !videoRef.current) return;
 
-    videoRef.current.muted = audioState.muted;
-    videoRef.current.volume = audioState.volume;
-  }, [isGeneric, audioState.muted, audioState.volume]);
+    const video = videoRef.current;
+    if (autoMutedRef.current && !audioState.muted) {
+      video.muted = true;
+    } else {
+      video.muted = audioState.muted;
+      if (audioState.muted) {
+        autoMutedRef.current = false;
+      }
+    }
+    video.volume = audioState.volume;
+  }, [useVideoElement, audioState.muted, audioState.volume]);
+
+  // Attach HLS streams to the video element when needed.
+  useEffect(() => {
+    if (!isHls || !videoRef.current) return;
+
+    const video = videoRef.current;
+    let hls: Hls | null = null;
+    let cancelled = false;
+
+    const attemptPlay = async () => {
+      if (cancelled) return;
+      const attemptId = ++playAttemptRef.current;
+      try {
+        await video.play();
+      } catch (err: any) {
+        if (!video.muted) {
+          autoMutedRef.current = true;
+          video.muted = true;
+          try {
+            await video.play();
+            await fetch("/api/audio", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: source.id, muted: true }),
+            });
+          } catch (innerErr) {
+            if (attemptId === playAttemptRef.current) {
+              console.warn("HLS autoplay failed after muting", innerErr);
+            }
+          }
+        } else if (attemptId === playAttemptRef.current) {
+          console.warn("HLS autoplay failed", err);
+        }
+      }
+    };
+
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = source.embedUrl;
+      video.addEventListener("loadedmetadata", attemptPlay);
+    } else if (Hls.isSupported()) {
+      hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+      hls.loadSource(source.embedUrl);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, attemptPlay);
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (!cancelled && data?.fatal) {
+          console.warn("HLS fatal error", data);
+        }
+      });
+    } else {
+      video.src = source.embedUrl;
+      video.addEventListener("loadedmetadata", attemptPlay);
+    }
+
+    return () => {
+      cancelled = true;
+      video.removeEventListener("loadedmetadata", attemptPlay);
+      if (hls) hls.destroy();
+      video.removeAttribute("src");
+      video.load();
+    };
+  }, [isHls, source.embedUrl, source.id]);
 
   return (
     <div
@@ -150,13 +225,14 @@ function StreamView({
     >
       {isYouTube ? (
         <div ref={containerRef} className="w-full h-full" />
-      ) : isGeneric && /\.(mp4|webm|ogg)$/i.test(source.embedUrl) ? (
+      ) : useVideoElement ? (
         <video
           ref={videoRef}
-          src={source.embedUrl}
+          src={isHls ? undefined : source.embedUrl}
           autoPlay
-          loop
+          loop={!isHls}
           muted={audioState.muted}
+          playsInline
           className="w-full h-full object-cover"
         />
       ) : (
